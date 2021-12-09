@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="..." />
+    <title>Mój pierwszy geoportal w Leaflet</title>
+    <link rel="icon" href="/leaflet/images/layers-2x.png" />
+    <style>
+      html,
+      body,
+      #map {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <!-- <style>
+      img {
+        width: 100px;
+        border-radius: 50px;
+        float: left;
+        margin-right: 10px;
+      }
+      p.username {
+        font-weight: bold;
+      }
+    </style> -->
+  </head>
+  <body>
+    <link rel="stylesheet" href="/leaflet/leaflet.css" />
+    <script src="leaflet/leaflet.js"></script>
+
+    <div id="map"></div>
+    <script>
+      var mymap = L.map("map", {
+        center: [19, 21],
+        zoom: 13,
+        maxZoom: 20,
+      }).setView([52.2, 21], 13);
+
+      var osm = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}",
+        { foo: "bar" }
+      );
+      //   osm.addTo(mymap);
+
+      var m = L.tileLayer(
+        "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}",
+        {
+          attribution:
+            'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+          maxZoom: 18,
+          id: "mapbox/streets-v11",
+          tileSize: 512,
+          zoomOffset: -1,
+          accessToken:
+            "sk.eyJ1Ijoia3J6MTQ0IiwiYSI6ImNrd3psYTViNDAxd2gybnB5Y3A2MDcwOWsifQ.50KRNDbQBAXAeonuyImXGQ",
+        }
+      );
+      m.addTo(mymap);
+
+      var carto = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+        {
+          attribution: "©OpenStreetMap, ©CartoDB",
+        }
+      );
+
+      var baseLayers = {
+        '<img src="/leaflet/images/layers-2x.png" />': osm,
+        OpenStreetMap: osm,
+        Mapbox: m,
+        CartoDB: carto,
+      };
+      var overlays = {};
+      L.control
+        .layers(baseLayers, overlays, { collapsed: true, position: "topright" })
+        .addTo(mymap);
+
+      L.control
+        .scale({ imperial: false, maxWidth: 100, position: "bottomleft" })
+        .addTo(mymap);
+
+      mymap.attributionControl.setPrefix(
+        "<a href='https://leafletjs.com'>Leaflet</a> | Mój pierwszy geoportal"
+      );
+    </script>
+  </body>
+</html>
