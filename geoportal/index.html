@@ -16,33 +16,41 @@
         padding: 0;
       }
     </style>
-    <!-- <style>
-      img {
-        width: 100px;
-        border-radius: 50px;
-        float: left;
-        margin-right: 10px;
-      }
-      p.username {
-        font-weight: bold;
-      }
-    </style> -->
   </head>
   <body>
+    <div id="map"></div>
+
+    <!--leaflet css-->
     <link rel="stylesheet" href="/leaflet/leaflet.css" />
+
+    <!--markercluster-->
+    <link rel="stylesheet" href="dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="dist/MarkerCluster.Default.css" />
+
+    <!-- leaflet-->
     <script src="leaflet/leaflet.js"></script>
 
-    <div id="map"></div>
+    <!--geojson-->
+    <script src="data/south_wales — kopia.js"></script>
+
+    <!--markercluster-->
+    <script src="dist/leaflet.markercluster.js"></script>
     <script>
       var mymap = L.map("map", {
-        center: [19, 21],
+        center: [52, -3],
         zoom: 13,
         maxZoom: 20,
-      }).setView([52.2, 21], 13);
+        // maxBounds: [
+        //   [-90, -180],
+        //   [90, 180],
+        // ],
+        // maxBoundsViscosity: 1,
+        worldCopyJump: true,
+      }).setView([51.5, -3.75], 10);
 
       var osm = L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}",
-        { foo: "bar" }
+        { foo: "bar", maxZoom: 20, maxNativeZoom: 19 }
       );
       //   osm.addTo(mymap);
 
@@ -51,36 +59,181 @@
         {
           attribution:
             'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-          maxZoom: 18,
+          maxZoom: 20,
+          // maxNativeZoom: 20,
           id: "mapbox/streets-v11",
+          tileSize: 512,
+          zoomOffset: -1, // SKĄD TO WZIĄŁEM? PO CO?
+          accessToken:
+            "sk.eyJ1Ijoia3J6MTQ0IiwiYSI6ImNrd3psYTViNDAxd2gybnB5Y3A2MDcwOWsifQ.50KRNDbQBAXAeonuyImXGQ",
+        }
+      );
+      // m.addTo(mymap);
+
+      var imagery = L.tileLayer(
+        "https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.jpg90?access_token={accessToken}",
+        {
+          maxZoom: 20,
+          accessToken:
+            "sk.eyJ1Ijoia3J6MTQ0IiwiYSI6ImNrd3psYTViNDAxd2gybnB5Y3A2MDcwOWsifQ.50KRNDbQBAXAeonuyImXGQ",
+        }
+      );
+
+      var outdoors = L.tileLayer(
+        "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}",
+        {
+          maxZoom: 20,
+          id: "mapbox/outdoors-v11",
           tileSize: 512,
           zoomOffset: -1,
           accessToken:
             "sk.eyJ1Ijoia3J6MTQ0IiwiYSI6ImNrd3psYTViNDAxd2gybnB5Y3A2MDcwOWsifQ.50KRNDbQBAXAeonuyImXGQ",
         }
       );
-      m.addTo(mymap);
+
+      var navigation = L.tileLayer(
+        "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}",
+        {
+          maxZoom: 20,
+          id: "mapbox/navigation-day-v1",
+          tileSize: 512,
+          zoomOffset: -1,
+          accessToken:
+            "sk.eyJ1Ijoia3J6MTQ0IiwiYSI6ImNrd3psYTViNDAxd2gybnB5Y3A2MDcwOWsifQ.50KRNDbQBAXAeonuyImXGQ",
+        }
+      );
+
+      var satellite_streets = L.tileLayer(
+        "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}",
+        {
+          maxZoom: 20,
+          id: "mapbox/satellite-streets-v11",
+          tileSize: 512,
+          zoomOffset: -1,
+          accessToken:
+            "sk.eyJ1Ijoia3J6MTQ0IiwiYSI6ImNrd3psYTViNDAxd2gybnB5Y3A2MDcwOWsifQ.50KRNDbQBAXAeonuyImXGQ",
+        }
+      );
 
       var carto = L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+        "https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png",
         {
+          style: "light_all",
+          // style: "light_nolabels",
           attribution: "©OpenStreetMap, ©CartoDB",
+          maxZoom: 20,
+        }
+      );
+      carto.addTo(mymap);
+
+      var carto_other = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png",
+        {
+          style: "rastertiles/voyager",
+          attribution: "©OpenStreetMap, ©CartoDB",
+          maxZoom: 20,
+        }
+      );
+
+      var geoportal = L.tileLayer.wms(
+        "https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/StandardResolution",
+        {
+          layers: "RASTER",
+          styles: "",
+          format: "image/jpeg",
+          transparent: false,
+          version: "1.3.0",
+          crs: null,
+          uppercase: true,
+          // ^ parametry WMS
+          opacity: 0.5,
+          maxZoom: 20,
+          attribution:
+            '<a href="https://geoportal.gov.pl">geoportal.gov.pl</a>',
+        }
+      );
+
+      var stamen_watercolor = new L.TileLayer(
+        "https://stamen-tiles.a.ssl.fastly.net/{style}/{z}/{x}/{y}.jpg",
+        {
+          style: "watercolor",
+          maxZoom: 18,
+          attribution: '<a href="http://maps.stamen.com">stamen.gov.pl</a>',
+        }
+      );
+
+      var stamen_terrain = new L.TileLayer(
+        "https://stamen-tiles.a.ssl.fastly.net/{style}/{z}/{x}/{y}.jpg",
+        {
+          style: "terrain",
+          maxZoom: 18,
+          attribution: '<a href="http://maps.stamen.com">stamen.gov.pl</a>',
+        }
+      );
+
+      var stamen_toner = new L.TileLayer(
+        "https://stamen-tiles.a.ssl.fastly.net/{style}/{z}/{x}/{y}.png",
+        {
+          style: "toner",
+          maxZoom: 18,
+          attribution: '<a href="http://maps.stamen.com">stamen.gov.pl</a>',
         }
       );
 
       var baseLayers = {
-        '<img src="/leaflet/images/layers-2x.png" />': osm,
         OpenStreetMap: osm,
-        Mapbox: m,
         CartoDB: carto,
+        CartoDB_v: carto_other,
+        Mapbox: m,
+        "Mapbox imagery": imagery,
+        "Mapbox outdoors": outdoors,
+        "Mapbox navigation": navigation,
+        "Mapbox satellite streets": satellite_streets,
+        "Geoportal ortofotomapa": geoportal,
+        "Stamen watercolor": stamen_watercolor,
+        "Stamen toner": stamen_toner,
+        "Stamen terrain": stamen_terrain,
       };
-      var overlays = {};
+
+      var videoUrl = "https://www.mapbox.com/bites/00188/patricia_nasa.webm";
+      var bounds = L.latLngBounds([
+        [32, -130],
+        [13, -100],
+      ]);
+      var video = L.videoOverlay(videoUrl, bounds, {
+        opacity: 0.6,
+        autoplay: true,
+        loop: true,
+        muted: true,
+        interactive: true,
+      }).addTo(mymap);
+      video.getElement().controls = true;
+
+      const geojsonMarkerOptions = {
+        radius: 9,
+        fillColor: "#247dff",
+        color: "#0049b3",
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.7,
+      };
+
+      var markers = L.markerClusterGroup();
+
+      var points_layer = L.geoJSON(geojson_points, {
+        pointToLayer: function (feature, latlng) {
+          return markers.addLayer(L.circleMarker(latlng, geojsonMarkerOptions));
+        },
+      }).addTo(mymap);
+
+      var overlays = { Video_test: video, markers };
+
       L.control
         .layers(baseLayers, overlays, { collapsed: true, position: "topright" })
         .addTo(mymap);
 
       L.control
-        .scale({ imperial: false, maxWidth: 100, position: "bottomleft" })
+        .scale({ imperial: false, maxWidth: 200, position: "bottomleft" })
         .addTo(mymap);
 
       mymap.attributionControl.setPrefix(
